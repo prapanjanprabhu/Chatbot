@@ -1,0 +1,185 @@
+{% extends 'base.html' %}
+
+{% block extra_css %}
+<style>
+    .chat-container {
+        max-width: 800px;
+        width: 66.67%;
+        background: white;
+        border-radius: 1rem;
+        box-shadow: 0 10px 20px rgba(0, 0, 0, 0.05);
+        display: flex;
+        flex-direction: column;
+        height: calc(100vh - 120px);
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        transform: translate(-40%, -50%);
+        z-index: 100;
+    }
+
+    .chat-body {
+        flex: 1;
+        padding: 1.5rem;
+        overflow-y: auto;
+        background: #f9fafb;
+    }
+
+    .chat-footer {
+        padding: 1rem 1.5rem;
+        background: white;
+        border-top: 1px solid #e5e7eb;
+        display: flex;
+        justify-content: center;
+    }
+
+    .message-bubble {
+        margin-bottom: 1rem;
+        padding: 1rem;
+        border-radius: 0.75rem;
+        max-width: 80%;
+        word-wrap: break-word;
+    }
+
+    .message-user {
+        background: #dbeafe;
+        margin-left: auto;
+        border-bottom-right-radius: 0;
+    }
+
+    .message-bot {
+        background: #f0f9ff;
+        margin-right: auto;
+        border-bottom-left-radius: 0;
+    }
+
+    .scrollbar-custom::-webkit-scrollbar {
+        width: 8px;
+    }
+
+    .scrollbar-custom::-webkit-scrollbar-track {
+        background: #f1f1f1;
+    }
+
+    .scrollbar-custom::-webkit-scrollbar-thumb {
+        background: #3b82f6;
+        border-radius: 4px;
+    }
+
+    @media (max-width: 768px) {
+        .chat-container {
+            width: 95%;
+            height: calc(100vh - 80px);
+            border-radius: 0.5rem;
+            top: 50%;
+            left: 50%;
+            transform: translate(-40%, -50%);
+        }
+    }
+
+    .animate-pulse {
+        animation: pulse 1.5s infinite;
+    }
+
+    @keyframes pulse {
+        0% { opacity: 0.2; }
+        50% { opacity: 1; }
+        100% { opacity: 0.2; }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="chat-container">
+    <!-- Chat Header -->
+    <div class="bg-blue-600 text-white px-6 py-4 rounded-t-xl flex justify-between items-center">
+        <h2 class="text-lg font-semibold">Chat with AI</h2>
+        <i class="bi bi-chat-dots text-xl"></i>
+    </div>
+
+    <!-- Chat Body -->
+    <div class="chat-body scrollbar-custom" id="chatBody">
+        {% for msg in messages %}
+        <div class="message-bubble {% if msg.sender == 'user' %}message-user{% else %}message-bot{% endif %}">
+            <div class="text-xs text-gray-500 mb-1">
+                {% if msg.sender == 'user' %}You{% else %}Bot{% endif %}
+            </div>
+            <p class="text-gray-800">{{ msg.content }}</p>
+        </div>
+        {% endfor %}
+    </div>
+
+    <!-- Chat Footer -->
+    <div class="chat-footer">
+        <form method="POST" class="flex gap-3 w-full max-w-[700px]" id="chatForm">
+            {% csrf_token %}
+            <textarea name="message" rows="2"
+                class="flex-1 border border-gray-300 rounded-lg p-3 focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
+                placeholder="Ask me anything..." required></textarea>
+            <button type="submit"
+                class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition">Send</button>
+        </form>
+    </div>
+</div>
+
+<!-- Auto-scroll + Typing behavior -->
+<script>
+    const chatBody = document.getElementById("chatBody");
+    const chatForm = document.getElementById("chatForm");
+
+    function scrollToBottom() {
+        chatBody.scrollTop = chatBody.scrollHeight;
+    }
+
+    window.onload = scrollToBottom;
+
+    chatForm.addEventListener("submit", function (e) {
+        e.preventDefault();
+
+        const textarea = chatForm.querySelector("textarea");
+        const message = textarea.value.trim();
+        if (!message) return;
+
+        // Show user message immediately
+        const userMsg = document.createElement("div");
+        userMsg.className = "message-bubble message-user";
+        userMsg.innerHTML = `<div class="text-xs text-gray-500 mb-1">You</div><p class="text-gray-800">${message}</p>`;
+        chatBody.appendChild(userMsg);
+        scrollToBottom();
+
+        // Clear input
+        textarea.value = "";
+
+        // Show typing...
+        const typingMsg = document.createElement("div");
+        typingMsg.className = "message-bubble message-bot";
+        typingMsg.id = "typing";
+        typingMsg.innerHTML = `<div class="text-xs text-gray-500 mb-1">Bot</div>
+                               <p class="text-gray-800"><i class="bi bi-three-dots text-blue-500 animate-pulse"></i> Typing...</p>`;
+        chatBody.appendChild(typingMsg);
+        scrollToBottom();
+
+        // Send to backend
+        const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+        fetch("", {
+            method: "POST",
+            headers: {
+                "X-CSRFToken": csrfToken,
+                "Content-Type": "application/x-www-form-urlencoded"
+            },
+            body: new URLSearchParams({ message: message })
+        })
+        .then(response => response.text())
+        .then(html => {
+            const parser = new DOMParser();
+            const doc = parser.parseFromString(html, 'text/html');
+
+            // Replace chatBody with new content
+            const newChatBody = doc.querySelector("#chatBody");
+            chatBody.innerHTML = newChatBody.innerHTML;
+
+            scrollToBottom();
+        });
+    });
+</script>
+{% endblock %}

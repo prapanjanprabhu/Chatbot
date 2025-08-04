@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI ChatBot</title>
+
+    <!-- Tailwind CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+
+    <!-- Bootstrap Icons -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet">
+
+    <!-- Alpine.js for dropdown -->
+    <script src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js" defer></script>
+
+    <style>
+        body {
+            background: linear-gradient(to bottom, #f0f4f8, #ffffff);
+            min-height: 100vh;
+            font-family: 'Inter', sans-serif;
+        }
+        .sidebar {
+            width: 250px;
+            height: 100vh;
+            position: fixed;
+            top: 0;
+            left: 0;
+            background: #ffffff;
+            border-right: 1px solid #e5e7eb;
+            padding: 1.5rem;
+            transition: transform 0.3s ease-in-out;
+            z-index: 1000;
+        }
+        .sidebar-hidden {
+            transform: translateX(-100%);
+        }
+        .content {
+            margin-left: 250px;
+            padding: 2rem;
+            min-height: 100vh;
+        }
+        .nav-link {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.75rem 1rem;
+            color: #374151;
+            border-radius: 0.375rem;
+            transition: background 0.2s;
+        }
+        .nav-link:hover {
+            background: #f3f4f6;
+        }
+        .toggle-btn {
+            position: fixed;
+            top: 1rem;
+            left: 1rem;
+            z-index: 1100;
+            display: none;
+        }
+        @media (max-width: 768px) {
+            .sidebar {
+                transform: translateX(-100%);
+            }
+            .sidebar-open {
+                transform: translateX(0);
+            }
+            .content {
+                margin-left: 0;
+            }
+            .toggle-btn {
+                display: block;
+            }
+        }
+    </style>
+            {% block extra_css %}{% endblock %}
+</head>
+<body>
+    <!-- Toggle Button for Mobile -->
+    <button class="toggle-btn text-gray-600 p-2 rounded-lg bg-white shadow-md md:hidden" onclick="toggleSidebar()">
+        <i class="bi bi-list text-2xl"></i>
+    </button>
+
+    <!-- Sidebar -->
+    <div class="sidebar md:sidebar-open" id="sidebar">
+        <div class="flex items-center justify-between mb-6">
+            <a class="text-xl font-bold text-gray-800 flex items-center gap-2" href="/">
+                <i class="bi bi-robot"></i> AI ChatBot
+            </a>
+            <button class="md:hidden text-gray-600" onclick="toggleSidebar()">
+                <i class="bi bi-x-lg"></i>
+            </button>
+        </div>
+        <ul class="nav flex-column space-y-2">
+            <li class="nav-item">
+                <a class="nav-link" href="{% url 'new_chat' %}">
+                    <i class="bi bi-chat-dots"></i>New Chat
+                </a>
+            </li>
+            {% if request.session.user_id %}
+
+
+
+
+            {% endif %}
+            <li class="nav-item mt-auto">
+                {% if request.session.user_id %}
+                <div x-data="{ open: false }" class="relative">
+<button @click="open = !open" class="nav-link w-full text-left flex items-center gap-2">
+    <i class="bi bi-person-circle"></i>
+    {{ username }}
+    <i class="bi bi-caret-down-fill ml-auto"></i>
+</button>
+
+
+
+                    <ul x-show="open" @click.away="open = false"
+                        class="absolute bottom-full left-0 w-full bg-white shadow-lg rounded-lg py-2 z-50 transition"
+                        x-transition>
+                        <li>
+                            <a href="{% url 'logout_view' %}" class="block px-4 py-2 text-gray-700 hover:bg-gray-100">Logout</a>
+                        </li>
+                    </ul>
+                </div>
+                {% else %}
+                <a class="nav-link" href="{% url 'auth_view' %}">
+                    <i class="bi bi-box-arrow-in-right"></i> Login
+                </a>
+                {% endif %}
+            </li>
+            <li class="nav-item" x-data="{ showHistory: false }">
+    <button @click="showHistory = !showHistory" class="nav-link w-full text-left">
+        <i class="bi bi-clock-history"></i> My History
+        <i class="bi bi-chevron-down ml-auto" :class="{ 'rotate-180': showHistory }"></i>
+    </button>
+    
+    <!-- History Dropdown Inside Sidebar -->
+    <div x-show="showHistory" x-transition class="mt-2 pl-4">
+        {% if summaries %}
+            <ul class="space-y-1 max-h-60 overflow-y-auto pr-1">
+                {% for msg in summaries %}
+                    <li>
+                        <a href="{% url 'view_conversation' msg.conversation_id %}"
+                           class="block text-sm text-gray-700 hover:bg-gray-100 px-2 py-1 rounded">
+                           
+                            {{ msg.content|truncatechars:40 }}
+                        </a>
+                    </li>
+                {% endfor %}
+            </ul>
+        {% else %}
+            <p class="text-gray-500 text-sm mt-1">No history found.</p>
+        {% endif %}
+    </div>
+</li>
+        </ul>
+        
+    </div>
+
+    <!-- Main Content -->
+    <div class="content">
+        {% block content %}
+        {% endblock %}
+    </div>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+    <script>
+        function toggleSidebar() {
+            const sidebar = document.getElementById('sidebar');
+            sidebar.classList.toggle('sidebar-open');
+        }
+    </script>
+</body>
+</html>
